@@ -8,7 +8,7 @@ import {
 } from "ai";
 import { z } from "zod";
 import { openai } from "@/lib/ai/provider";
-import { findRelevantContent } from "@/lib/ai/embedding";
+import { findAllRelevantContent } from "@/lib/ai/embedding";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -18,9 +18,11 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: openai("gpt-4o"),
-    system: `You are a helpful assistant. Check your knowledge base before answering any questions.
+    system: `You are a helpful assistant with access to a knowledge base and user's personal notes.
+    Check your knowledge base and user notes before answering any questions.
     Only respond to questions using information from tool calls.
-    if no relevant information is found in the tool calls, respond, "Sorry, I don't know."`,
+    When information comes from user notes, mention that it's from their personal notes.
+    If no relevant information is found in the tool calls, respond, "Sorry, I don't know."`,
     messages: convertToModelMessages(messages),
     stopWhen: stepCountIs(5),
     tools: {
@@ -34,12 +36,13 @@ export async function POST(req: Request) {
         }),
         execute: async ({ content }) => createResource({ content }),
       }),
-      getInformation: tool({
-        description: `get information from your knowledge base to answer questions.`,
+      search: tool({
+        description: `search through the knowledge base and user's personal notes to find relevant information.
+          Always use this tool to answer questions. Results include both resources and user notes.`,
         inputSchema: z.object({
-          question: z.string().describe("the users question"),
+          query: z.string().describe("the search query"),
         }),
-        execute: async ({ question }) => findRelevantContent(question),
+        execute: async ({ query }) => findAllRelevantContent(query),
       }),
     },
   });
