@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1719997972944,
-      "tag": "0000_yielding_bloodaxe",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1764972141207,
-      "tag": "0001_sad_sleeper",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1764973459800,
-      "tag": "0002_familiar_ironclad",
+      "when": 1765055362926,
+      "tag": "0000_sudden_tombstone",
       "breakpoints": true
     }
   ]

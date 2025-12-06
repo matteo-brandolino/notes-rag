@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Note } from "@/lib/db/schema/notes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ interface NoteCardProps {
 export function NoteCard({ note, onEdit }: NoteCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPinning, setIsPinning] = useState(false);
+  const [formattedDate, setFormattedDate] = useState<string>("");
 
   const handleDelete = async () => {
     if (confirm("Sei sicuro di voler eliminare questa nota?")) {
@@ -38,14 +39,16 @@ export function NoteCard({ note, onEdit }: NoteCardProps) {
     setIsPinning(false);
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("it-IT", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(date));
-  };
+  useEffect(() => {
+    setFormattedDate(
+      new Intl.DateTimeFormat("it-IT", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(note.updatedAt))
+    );
+  }, [note.updatedAt]);
 
   return (
     <Card
@@ -139,7 +142,7 @@ export function NoteCard({ note, onEdit }: NoteCardProps) {
           </div>
         )}
         <p className="mt-3 text-xs text-muted-foreground/70">
-          {formatDate(note.updatedAt)}
+          {formattedDate}
         </p>
       </CardContent>
     </Card>
