@@ -27,11 +27,31 @@ export const notes = pgTable("notes", {
 });
 
 export const insertNoteSchema = z.object({
-  title: z.string().min(1).max(255),
-  content: z.string().min(1),
-  tags: z.array(z.string()).optional(),
+  title: z
+    .string()
+    .min(1, "Title is required")
+    .max(255, "Title must be less than 255 characters")
+    .trim(),
+  content: z
+    .string()
+    .min(1, "Content is required")
+    .max(100000, "Content is too long")
+    .trim(),
+  tags: z
+    .array(
+      z
+        .string()
+        .min(1, "Tag cannot be empty")
+        .max(50, "Tag must be less than 50 characters")
+        .trim()
+    )
+    .max(20, "Maximum 20 tags allowed")
+    .optional(),
   isPinned: z.boolean().optional(),
-  color: z.string().max(7).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format")
+    .optional(),
 });
 
 export const updateNoteSchema = insertNoteSchema.partial();

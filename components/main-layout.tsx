@@ -4,15 +4,10 @@ import { useState } from "react";
 import { Note } from "@/lib/db/schema/notes";
 import { NotesPanel } from "@/components/notes/notes-panel";
 import { ChatPanel } from "@/components/chat/chat-panel";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StickyNote, Bot, PanelLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { StickyNote, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 interface MainLayoutProps {
   initialNotes: Note[];
@@ -22,18 +17,19 @@ export function MainLayout({ initialNotes }: MainLayoutProps) {
   const [isMobileNotesOpen, setIsMobileNotesOpen] = useState(true);
 
   return (
-    <>
+    <ErrorBoundary>
       {/* Desktop Layout */}
-      <div className="hidden h-screen md:block">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
-          <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
+      <div className="hidden h-screen md:flex">
+        <div className="w-[320px] border-r">
+          <ErrorBoundary>
             <NotesPanel notes={initialNotes} />
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={60} minSize={40}>
+          </ErrorBoundary>
+        </div>
+        <div className="flex-1">
+          <ErrorBoundary>
             <ChatPanel />
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </ErrorBoundary>
+        </div>
       </div>
 
       {/* Mobile Layout */}
@@ -68,13 +64,17 @@ export function MainLayout({ initialNotes }: MainLayoutProps) {
             </TabsList>
           </div>
           <TabsContent value="notes" className="mt-0 flex-1 overflow-hidden">
-            <NotesPanel notes={initialNotes} />
+            <ErrorBoundary>
+              <NotesPanel notes={initialNotes} />
+            </ErrorBoundary>
           </TabsContent>
           <TabsContent value="chat" className="mt-0 flex-1 overflow-hidden">
-            <ChatPanel />
+            <ErrorBoundary>
+              <ChatPanel />
+            </ErrorBoundary>
           </TabsContent>
         </Tabs>
       </div>
-    </>
+    </ErrorBoundary>
   );
 }

@@ -9,6 +9,31 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Send, Bot, User, Loader2, Search, BookOpen, StickyNote } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RagResultsFlow } from "./rag-flow";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+interface SearchToolInput {
+  query?: string;
+}
+
+interface SearchResource {
+  content: string;
+  similarity: number;
+  resourceId: string;
+}
+
+interface SearchNote {
+  content: string;
+  similarity: number;
+  noteId: string;
+  noteTitle?: string;
+}
+
+interface SearchOutput {
+  resources?: SearchResource[];
+  notes?: SearchNote[];
+}
 
 export function ChatPanel() {
   const [input, setInput] = useState("");
@@ -34,42 +59,47 @@ export function ChatPanel() {
 
   const getToolLabel = (toolType: string) => {
     const labels: Record<string, string> = {
-      "tool-addResource": "Aggiunta risorsa",
-      "tool-search": "Ricerca",
+      "tool-addResource": "Add Resource",
+      "tool-search": "Search",
     };
     return labels[toolType] || toolType;
   };
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
       <div className="border-b p-4">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5" />
           <h2 className="text-lg font-semibold">AI Assistant</h2>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Cerca nelle tue note e nella knowledge base
+          Search through your notes and knowledge base
         </p>
       </div>
 
-      {/* Messages */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Bot className="mb-4 h-12 w-12 text-muted-foreground/50" />
-              <h3 className="text-lg font-medium">Inizia una conversazione</h3>
+              <h3 className="text-lg font-medium">Start a conversation</h3>
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Fai domande sulle tue note o aggiungi nuove informazioni alla
-                knowledge base
+                Ask questions about your notes or add new information to the knowledge base
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <Badge variant="outline" className="cursor-pointer hover:bg-secondary">
-                  Cosa c'è nelle mie note?
+                <Badge
+                  variant="outline"
+                  className="cursor-pointer hover:bg-secondary"
+                  onClick={() => sendMessage({ text: "What's in my notes?" })}
+                >
+                  What's in my notes?
                 </Badge>
-                <Badge variant="outline" className="cursor-pointer hover:bg-secondary">
-                  Riassumi le mie note
+                <Badge
+                  variant="outline"
+                  className="cursor-pointer hover:bg-secondary"
+                  onClick={() => sendMessage({ text: "Summarize my notes" })}
+                >
+                  Summarize my notes
                 </Badge>
               </div>
             </div>
@@ -102,17 +132,22 @@ export function ChatPanel() {
                             className={cn(
                               "inline-block px-4 py-2",
                               m.role === "user"
-                                ? "bg-primary text-primary-foreground"
+                                ? "text-primary-foreground"
                                 : "bg-muted"
                             )}
                           >
-                            <p className="whitespace-pre-wrap text-sm">
-                              {part.text}
-                            </p>
+                            <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                allowedElements={['p', 'strong', 'em', 'ul', 'ol', 'li', 'code', 'pre', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'br', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td']}
+                                unwrapDisallowed={true}
+                              >
+                                {part.text}
+                              </ReactMarkdown>
+                            </div>
                           </Card>
                         );
                       case "tool-addResource":
-                      case "tool-search":
                         return (
                           <div key={i} className="space-y-1">
                             <Badge
@@ -136,6 +171,46 @@ export function ChatPanel() {
                                 </pre>
                               </Card>
                             )}
+                          </div>
+                        );
+                      case "tool-search":
+                        return (
+                          <div key={i} className="space-y-2">
+                            {part.state === "output-available" && part.output != null && (() => {
+                              const toolInput = (part as { input?: SearchToolInput }).input;
+                              const query = toolInput?.query || "Search";
+                              const output = part.output as SearchOutput;
+                              const allResults = [
+                                ...(output.resources || []).map((r, idx) => ({
+                                  id: `resource-${r.resourceId || idx}`,
+                                  content: r.content,
+                                  similarity: r.similarity,
+                                  metadata: { type: "resource" },
+                                })),
+                                ...(output.notes || []).map((n, idx) => ({
+                                  id: `note-${n.noteId || idx}`,
+                                  content: n.noteTitle ? `${n.noteTitle}: ${n.content}` : n.content,
+                                  similarity: n.similarity,
+                                  metadata: { type: "note", title: n.noteTitle },
+                                })),
+                              ];
+                              return (
+                                <>
+                                  <div className="mb-2 space-y-1">
+                                    <p className="text-xs font-medium text-foreground">
+                                      Semantic Search (RAG)
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Found {allResults.length} relevant {allResults.length === 1 ? 'result' : 'results'} in your notes and resources. Nodes are connected to the central query based on semantic similarity.
+                                    </p>
+                                  </div>
+                                  <RagResultsFlow
+                                    query={query}
+                                    results={allResults}
+                                  />
+                                </>
+                              );
+                            })()}
                           </div>
                         );
                       default:
@@ -164,13 +239,12 @@ export function ChatPanel() {
         </div>
       </ScrollArea>
 
-      {/* Input */}
       <div className="border-t p-4">
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Scrivi un messaggio..."
+            placeholder="Type a message..."
             disabled={isLoading}
             className="flex-1"
           />

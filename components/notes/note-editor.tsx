@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, Loader2 } from "lucide-react";
 import { createNote, updateNote } from "@/lib/actions/notes";
+import { toast } from "sonner";
 
 const COLORS = [
   "#ffffff",
@@ -75,26 +76,41 @@ export function NoteEditor({ note, open, onOpenChange }: NoteEditorProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
+    if (!title.trim() || !content.trim()) {
+      toast.error("Title and content are required");
+      return;
+    }
 
     setIsSubmitting(true);
 
-    const noteData: NewNoteParams = {
-      title: title.trim(),
-      content: content.trim(),
-      tags,
-      color,
-      isPinned: note?.isPinned || false,
-    };
+    try {
+      const noteData: NewNoteParams = {
+        title: title.trim(),
+        content: content.trim(),
+        tags,
+        color,
+        isPinned: note?.isPinned || false,
+      };
 
-    if (note) {
-      await updateNote(note.id, noteData);
-    } else {
-      await createNote(noteData);
+      let result;
+      if (note) {
+        result = await updateNote(note.id, noteData);
+      } else {
+        result = await createNote(noteData);
+      }
+
+      if (result.success) {
+        toast.success(note ? "Note updated successfully" : "Note created successfully");
+        onOpenChange(false);
+      } else {
+        toast.error(result.error || "Failed to save note");
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+      console.error("Error saving note:", error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
-    onOpenChange(false);
   };
 
   return (
@@ -102,28 +118,28 @@ export function NoteEditor({ note, open, onOpenChange }: NoteEditorProps) {
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {note ? "Modifica nota" : "Nuova nota"}
+            {note ? "Edit Note" : "New Note"}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Titolo</Label>
+            <Label htmlFor="title">Title</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Titolo della nota..."
+              placeholder="Note title..."
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">Contenuto</Label>
+            <Label htmlFor="content">Content</Label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Scrivi la tua nota..."
+              placeholder="Write your note..."
               rows={8}
               required
             />
@@ -136,7 +152,7 @@ export function NoteEditor({ note, open, onOpenChange }: NoteEditorProps) {
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Aggiungi tag..."
+                placeholder="Add tag..."
                 className="flex-1"
               />
               <Button type="button" variant="outline" onClick={handleAddTag}>
@@ -161,7 +177,7 @@ export function NoteEditor({ note, open, onOpenChange }: NoteEditorProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Colore</Label>
+            <Label>Color</Label>
             <div className="flex gap-2">
               {COLORS.map((c) => (
                 <button
@@ -183,11 +199,11 @@ export function NoteEditor({ note, open, onOpenChange }: NoteEditorProps) {
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Annulla
+              Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {note ? "Salva modifiche" : "Crea nota"}
+              {note ? "Save Changes" : "Create Note"}
             </Button>
           </div>
         </form>

@@ -47,11 +47,11 @@ export function NotesPanel({ notes }: NotesPanelProps) {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <StickyNote className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">Le mie note</h2>
+            <h2 className="text-lg font-semibold">My Notes</h2>
           </div>
           <Button onClick={handleNewNote} size="sm">
             <Plus className="mr-1 h-4 w-4" />
-            Nuova
+            New
           </Button>
         </div>
         <div className="relative mt-3">
@@ -59,33 +59,32 @@ export function NotesPanel({ notes }: NotesPanelProps) {
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cerca nelle note..."
+            placeholder="Search notes..."
             className="pl-9"
           />
         </div>
       </div>
 
-      {/* Notes List */}
       <ScrollArea className="flex-1">
         <div className="p-4">
           {notes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <StickyNote className="mb-4 h-12 w-12 text-muted-foreground/50" />
-              <h3 className="text-lg font-medium">Nessuna nota</h3>
+              <h3 className="text-lg font-medium">No Notes</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Crea la tua prima nota per iniziare
+                Create your first note to get started
               </p>
               <Button onClick={handleNewNote} className="mt-4">
                 <Plus className="mr-2 h-4 w-4" />
-                Crea nota
+                Create Note
               </Button>
             </div>
           ) : filteredNotes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Search className="mb-4 h-12 w-12 text-muted-foreground/50" />
-              <h3 className="text-lg font-medium">Nessun risultato</h3>
+              <h3 className="text-lg font-medium">No Results</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Prova con una ricerca diversa
+                Try a different search
               </p>
             </div>
           ) : (
@@ -93,7 +92,7 @@ export function NotesPanel({ notes }: NotesPanelProps) {
               {pinnedNotes.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-xs font-medium uppercase text-muted-foreground">
-                    Fissate
+                    Pinned
                   </h3>
                   <div className="grid gap-3">
                     {pinnedNotes.map((note) => (
@@ -111,7 +110,7 @@ export function NotesPanel({ notes }: NotesPanelProps) {
                 <div className="space-y-2">
                   {pinnedNotes.length > 0 && (
                     <h3 className="text-xs font-medium uppercase text-muted-foreground">
-                      Altre note
+                      Other Notes
                     </h3>
                   )}
                   <div className="grid gap-3">
@@ -129,8 +128,6 @@ export function NotesPanel({ notes }: NotesPanelProps) {
           )}
         </div>
       </ScrollArea>
-
-      {/* Editor Dialog */}
       <NoteEditor
         note={editingNote}
         open={isEditorOpen}
